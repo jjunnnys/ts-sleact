@@ -1,0 +1,9 @@
+{
+  // webpack.config.ts 파일을 적용시키기 위한 파일
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "target": "ES5",
+    "esModuleInterop": true
+  }
+}
