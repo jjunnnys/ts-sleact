@@ -1,6 +1,7 @@
 import path from 'path';
 import webpack from 'webpack';
 import ReactRefreshWebpackPlugin from '@pmmmwh/react-refresh-webpack-plugin';
+import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin'; // 타입, eslint, prettier 체크를 병렬처리
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
@@ -58,9 +59,18 @@ const config: webpack.Configuration = {
                 test: /\.css?$/,
                 use: ['style-loader', 'css-loader'],
             },
+            // {
+            //     test: /\.css$/,
+            //     use: ['style-loader', 'postcss-loader'],
+            // },
+            // {
+            //     test: /\.jsx?$/,
+            //     use: ['babel-loader', 'astroturf/loader'],
+            // },
         ],
     },
     plugins: [
+        new ForkTsCheckerWebpackPlugin(), // 개발용 서버 속도가 빨라짐
         // 새로고침 없이 자동으로 핫리로딩이 된다
         new webpack.HotModuleReplacementPlugin(),
         new ReactRefreshWebpackPlugin(),
@@ -74,6 +84,12 @@ const config: webpack.Configuration = {
         historyApiFallback: true, // 개발용 서버가 BrowserRouter를 인식을 한다.
         port: 3090,
         publicPath: '/dist/',
+        proxy: {
+            '/api/': {
+                changeOrigin: true,
+                target: 'hppt://localhost:3095',
+            },
+        },
     },
 };
 

@@ -1,38 +1,76 @@
 import React, { ReactElement, useCallback, useState } from 'react';
+import axios from 'axios';
+import useSWR from 'swr';
 
-import { Button, Form, Header, Input, Label, LinkContainer } from '@pages/SignUp/styles';
+import { Button, Error, Form, Header, Input, Label, LinkContainer, Success } from '@pages/SignUp/styles';
+import useInput from '@hooks/useInput';
+import fetcher from '@utils/fetcher';
+import { Redirect } from 'react-router';
 
 interface Props {}
 
 function SignUP({}: Props): ReactElement {
-    const [email, setEmail] = useState('');
-    const [nickname, setNickname] = useState('');
-    const [password, setPassword] = useState('');
-    const [passwordCheck, setPasswordCheck] = useState('');
+    const { data: userData, error, revalidate, mutate } = useSWR('/api/user', fetcher);
 
-    const onChangeEmail = useCallback((e) => {
-        const { value } = e.target;
-        setEmail(() => value);
-    }, []);
+    const [signUpError, setSignUpError] = useState('');
+    const [signUpSuccess, setSignUpSuccess] = useState(false);
+    const [mismatchError, setMismatchError] = useState(false);
 
-    const onChangeNickname = useCallback((e) => {
-        const { value } = e.target;
-        setNickname(() => value);
-    }, []);
+    const [email, onChangeEmail] = useInput('');
+    const [nickname, onChangeNickname] = useInput('');
+    const [password, _1, setPassword] = useInput('');
+    const [passwordCheck, _2, setPasswordCheck] = useInput('');
 
-    const onChangePassword = useCallback((e) => {
-        const { value } = e.target;
-        setPassword(() => value);
-    }, []);
+    // useCallback : 함수 자체를 캐싱 -> 함수 자리에 그대로 넣으면 됩 (이벤트 리스너 같은)
+    // useMemo : 함수의 리턴 값을 캐싱 -> useMemo(()=> 값,[])
 
-    const onChangePasswordCheck = useCallback((e) => {
-        const { value } = e.target;
-        setPasswordCheck(() => value);
-    }, []);
+    const onChangePassword = useCallback(
+        (e) => {
+            const { value } = e.target;
+            setPassword(() => value);
+            setMismatchError(() => passwordCheck !== e.target.value);
+        },
+        [passwordCheck],
+    );
 
-    const onSubmit = useCallback((e) => {
-        e.preventDefault();
-    }, []);
+    const onChangePasswordCheck = useCallback(
+        (e) => {
+            const { value } = e.target;
+            setPasswordCheck(() => value);
+            setMismatchError(() => password !== e.target.value);
+        },
+        [password],
+    );
+
+    const onSubmit = useCallback(
+        (e) => {
+            e.preventDefault();
+
+            if (!nickname || !nickname.trim()) {
+                // 닉네임 빈칸 입력 시
+                setSignUpError(() => '닉네임을 입력해주세요');
+                return;
+            }
+            if (!mismatchError) {
+                setSignUpError('');
+                setSignUpSuccess(false);
+                axios
+                    .post('/api/user', { email, nickname, password })
+                    .then(() => {
+                        setSignUpSuccess(true);
+                    })
+                    .catch((error) => {
+                        console.error(error.response);
+                        setSignUpError(error.response?.data);
+                    });
+            }
+        },
+        [nickname, email, password, mismatchError],
+    );
+
+    if (userData) {
+        return <Redirect to="/workspace/sleact/channel/일반" />;
+    }
 
     return (
         <div id="container">
